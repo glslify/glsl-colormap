@@ -14,7 +14,7 @@ var regl = require('regl')()
 var draw = regl({
   frag: glsl`
     precision mediump float;
-    #pragma glslify: jet = require('../jet')
+    #pragma glslify: jet = require('glsl-colormap/jet')
     varying vec2 uv;
     void main () {
       gl_FragColor = jet(uv.x);
