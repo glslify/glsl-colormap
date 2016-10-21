@@ -1,0 +1,17 @@
+{
+  "name": "glsl-colormap",
+  "version": "1.0.0",
+  "description": "colormaps for glsl shaders",
+  "main": "index.js",
+  "devDependencies": {
+    "colormap": "^2.2.0"
+  },
+  "keywords": [
+    "glslify",
+    "webgl",
+    "glsl",
+    "colormap"
+  ],
+  "author": "substack",
+  "license": "BSD"
+}

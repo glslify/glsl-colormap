@@ -54,22 +54,55 @@ var frag = {
   yignbu: glsl.file('./frag/yignbu.glsl'),
   yiorrd: glsl.file('./frag/yiorrd.glsl')
 }
-render()
-window.addEventListener('resize', render)
 
-function render () {
-  regl.clear({ color: [1,1,1,1], depth: true })
+regl.clear({ color: [1,1,1,1], depth: true })
+regl({
+  frag: `
+    precision mediump float;
+    uniform float w, h;
+    varying vec2 uv;
+    void main () {
+      float x = mod(floor(w*uv.x)+floor(h*uv.y),2.0);
+      gl_FragColor = vec4(vec3(x),1);
+    }
+  `,
+  vert: `
+    precision mediump float;
+    attribute vec2 position;
+    varying vec2 uv;
+    void main () {
+      uv = (position+1.0)*0.5;
+      gl_Position = vec4(position,0,1);
+    }
+  `,
+  attributes: {
+    position: [-1,-1,-1,1,0.5,-1,-1,1,0.5,-1,0.5,1]
+  },
+  uniforms: {
+    w: function (context) {
+      var aspect = context.viewportWidth / context.viewportHeight
+      return aspect > 1 ? 128 : 128 * aspect
+    },
+    h: function (context) {
+      var aspect = context.viewportWidth / context.viewportHeight
+      return aspect > 1 ? 128 * aspect : 128
+    }
+  },
+  count: 6,
+  blend: {
+    enable: true,
+    func: { src: 'src alpha', dst: 'one minus src alpha' }
+  },
+  depth: { enable: false, mask: false }
+})()
+colors.forEach(function (name, i) {
+  var x0 = -1, x1 = 0.5
+  var y0 = 1-2*i/colors.length
+  var y1 = 1-2*(i+1)/colors.length
+  var ty0 = 1-2*(i+1.75)/colors.length
   regl({
-    frag: `
-      precision mediump float;
-      uniform float w, h;
-      varying vec2 uv;
-      void main () {
-        float x = mod(floor(w*uv.x)+floor(h*uv.y),2.0);
-        gl_FragColor = vec4(vec3(x),1);
-      }
-    `,
-    vert: `
+    frag: frag[name],
+    vert: glsl`
       precision mediump float;
       attribute vec2 position;
       varying vec2 uv;
@@ -79,17 +112,7 @@ function render () {
       }
     `,
     attributes: {
-      position: [-1,-1,-1,1,0.5,-1,-1,1,0.5,-1,0.5,1]
-    },
-    uniforms: {
-      w: function (context) {
-        var aspect = context.viewportWidth / context.viewportHeight
-        return aspect > 1 ? 128 : 128 * aspect
-      },
-      h: function (context) {
-        var aspect = context.viewportWidth / context.viewportHeight
-        return aspect > 1 ? 128 * aspect : 128
-      }
+      position: [x0,y0,x0,y1,x1,y0,x0,y1,x1,y0,x1,y1]
     },
     count: 6,
     blend: {
@@ -98,54 +121,27 @@ function render () {
     },
     depth: { enable: false, mask: false }
   })()
-  colors.forEach(function (name, i) {
-    var x0 = -1, x1 = 0.5
-    var y0 = 1-2*i/colors.length
-    var y1 = 1-2*(i+1)/colors.length
-    var ty0 = 1-2*(i+1.75)/colors.length
-    regl({
-      frag: frag[name],
-      vert: glsl`
-        precision mediump float;
-        attribute vec2 position;
-        varying vec2 uv;
-        void main () {
-          uv = (position+1.0)*0.5;
-          gl_Position = vec4(position,0,1);
-        }
-      `,
-      attributes: {
-        position: [x0,y0,x0,y1,x1,y0,x0,y1,x1,y0,x1,y1]
-      },
-      count: 6,
-      blend: {
-        enable: true,
-        func: { src: 'src alpha', dst: 'one minus src alpha' }
-      },
-      depth: { enable: false, mask: false }
-    })()
-    var text = vtext(name, {
-      lineHeight: 2/colors.length,
-      triangles: true
-    })
-    regl({
-      frag: `
-        precision mediump float;
-        void main () {
-          gl_FragColor = vec4(0,0,0,1);
-        }
-      `,
-      vert: `
-        precision mediump float;
-        attribute vec2 position;
-        void main () {
-          gl_Position = vec4(position.x+0.55,float(${ty0})-position.y,0,1);
-        }
-      `,
-      attributes: {
-        position: text.positions
-      },
-      elements: text.cells
-    })()
+  var text = vtext(name, {
+    lineHeight: 2/colors.length,
+    triangles: true
   })
-}
+  regl({
+    frag: `
+      precision mediump float;
+      void main () {
+        gl_FragColor = vec4(0,0,0,1);
+      }
+    `,
+    vert: `
+      precision mediump float;
+      attribute vec2 position;
+      void main () {
+        gl_Position = vec4(position.x+0.55,float(${ty0})-position.y,0,1);
+      }
+    `,
+    attributes: {
+      position: text.positions
+    },
+    elements: text.cells
+  })()
+})
