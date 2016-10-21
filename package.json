@@ -1,6 +1,6 @@
 {
   "name": "glsl-colormap",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "colormaps for glsl shaders",
   "main": "index.js",
   "devDependencies": {
